@@ -35,7 +35,7 @@ import com.shootoff.targets.io.TargetIO.TargetComponents;
 import ch.qos.logback.classic.Logger;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.embed.swing.JFXPanel;
+//import javafx.embed.swing.JFXPanel;
 import javafx.scene.control.TableView;
 
 public class TestISSFStandardPistol {
@@ -51,7 +51,7 @@ public class TestISSFStandardPistol {
 
 	@Before
 	public void setUp() throws UnsupportedEncodingException, ConfigurationException {
-		new JFXPanel(); // Initialize the JFX toolkit
+//		new JFXPanel(); // Initialize the JFX toolkit
 
 		stringOutStream = new PrintStream(stringOut, false, "UTF-8");
 		System.setProperty("shootoff.home", System.getProperty("user.dir"));

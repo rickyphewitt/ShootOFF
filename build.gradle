@@ -8,21 +8,29 @@ buildscript {
     repositories {
         jcenter()
         maven {
-            url  "http://repo.jenkins-ci.org/releases/"
+            url  "https://repo.jenkins-ci.org/releases/"
         }
     }
     dependencies {
         classpath group: 'org.codehaus.gpars', name: 'gpars', version: '1.1.0'
         classpath group: 'org.kohsuke', name: 'github-api', version: '1.+'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.3'
+
     }
 }
 
 plugins {
     id 'org.ajoberstar.grgit' version '1.3.2'
+    id 'org.openjfx.javafxplugin' version '0.0.2'
+
 }
 
 apply plugin: 'java'
+apply plugin: 'java-library'
+apply plugin: 'application'
 apply plugin: 'eclipse'
+apply plugin: 'org.openjfx.javafxplugin'
+apply plugin: 'application' // If you're creating a runnable application
 
 eclipse {
     jdt {
@@ -31,10 +39,16 @@ eclipse {
     }
 }
 
+
+javafx {
+    version = "11"
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.media', 'javafx.swing', 'javafx.graphics', 'javafx.web']
+}
+
 def javaHome = System.properties['java.home']
 
 ext.extProp = new Properties()
-extProp.load(new FileInputStream("src/main/resources/version.properties"))
+extProp.load(new FileInputStream("/home/ricky/dev/ShootOFF/src/main/resources/version.properties"))
 def version = extProp["version"]
 
 def username = ''                                           // Username for GitHub (will request JIT via console input)
@@ -64,16 +78,38 @@ def tsaURL = 'http://timestamp.comodoca.com/rfc3161'
 
 repositories {
     jcenter()
+    mavenCentral()
     // This repository is directly included even though we use jcenter
     // because it makes it easier to get the smallest set of marytts that
     // meets our needs without missing the freetts dependency
     maven {
-        url  "http://dl.bintray.com/marytts/marytts/"
+        url "http://dl.bintray.com/marytts/marytts/"
     }
     maven {
         url "https://dl.bintray.com/phrack/maven/"
     }
+
+    // for xuggle
+    maven {
+        url "http://www.dcm4che.org/maven2/"
+    }
+
+    // for jtok
+    maven {
+        url "https://raw.githubusercontent.com/DFKI-MLT/Maven-Repository/main"
+    }
+
+    // for fast md5
+    maven {
+        url "https://nrgxnat.jfrog.io/artifactory/libs-release/"
+    }
+
+    // for jampack
+    maven {
+        url "https://nexus.terrestris.de/repository/public/"
+    }
 }
+
 
 configurations {
     jfxant
@@ -107,10 +143,10 @@ dependencies {
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.+'
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
 
-    // tts dependencies
-    compile group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.1.+'
+    // tts dependencies - was 5.2.+ but didn't work, testing 5.1.+
+    compile group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.2.+'
+    compile group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.2.+'
+    compile group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.2.+'
 
     // xuggle for recording and playing back video
     compile group: 'xuggle', name: 'xuggle-xuggler', version: '5.4'
@@ -145,15 +181,6 @@ dependencies {
     testCompile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.+'
 }
 
-test {
-    onOutput { descriptor, event ->
-       logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
-    }
-
-    testLogging {
-        exceptionFormat = 'full'
-    }
-}
 
 task copyEyeCam(type:Copy) {
     from 'eyeCam32.dll' into 'build/dist'
@@ -201,6 +228,35 @@ task updateJars() {
         }
     }
 }
+
+
+// In Gradle 4, use mainClassName (not application {} block)
+mainClassName = "${mainClass}"
+
+
+jar {
+    dependsOn('copyConfig')
+    dependsOn('copyTargets')
+    dependsOn('copyCourses')
+    dependsOn('copySounds')
+    dependsOn('copyLibs')
+    dependsOn('copyEyeCam')
+
+    inputs.dir sourceSets.main.output.classesDir
+    inputs.dir sourceSets.main.output.resourcesDir
+    outputs.upToDateWhen { false }
+
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+
+    manifest {
+        attributes (
+                "Implementation-Title": "foo",
+                'Main-Class': "com.shootoff.Start"
+        )
+
+    }
+}
+
 
 task fxJar(dependsOn: build) {
     dependsOn('copyConfig')

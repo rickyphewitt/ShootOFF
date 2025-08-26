@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch;
 import javax.swing.SwingUtilities;
 
 import javafx.application.Platform;
-import javafx.embed.swing.JFXPanel;
+//import javafx.embed.swing.JFXPanel;
 
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -88,7 +88,7 @@ public class JavaFXThreadingRule implements TestRule {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
 					// initializes JavaFX environment
-					new JFXPanel();
+//					new JFXPanel();
 
 					latch.countDown();
 				}
