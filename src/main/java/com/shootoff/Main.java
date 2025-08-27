@@ -552,7 +552,7 @@ public class Main extends Application {
 		if (version.isPresent() && !config.inDebugMode() && !isJWS) checkVersion();
 
 		// This initializes the TTS engine
-		TextToSpeech.say("");
+		TextToSpeech.say("Fooooooooooooo");
 
 		if (config.isFirstRun()) {
 			if (shouldShowV4lWarning) showV4lWarning();
@@ -810,7 +810,7 @@ public class Main extends Application {
 			}
 		}
 
-		nu.pattern.OpenCV.loadShared();
+		nu.pattern.OpenCV.loadLocally();
 
 		// Read ShootOFF's version number
 		final Properties prop = new Properties();

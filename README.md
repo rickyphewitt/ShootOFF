@@ -25,8 +25,13 @@ To work with the ShootOFF source code you will need, at a minimum:
   * Extract to where your java is normally, linux /usr/lib/jvm/<java version>
   * create sybolic links like here: https://ubuntuhandbook.org/index.php/2022/03/install-jdk-18-ubuntu/
   * `sudo update-alternatives --config java` to change it
-* JDK 11 
-  * Download the .deb for linux
+* OpenJDk 11 
+  * Install JDK/JRI
+  * Install 64 bit version of libv41 (32 bit if its an old comp)
+    * `sudo apt-get install -y libv4l`
+    * Then before running the jar load the module, for 22.04 this is installed at the below location
+      * `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libv4l/v4l1compat.so`
+      * full command `export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libv4l/v4l1compat.so; java -jar build/libs/ShootOFF.jar`
 * Gradle -- ensure the JDK you installed above is the default JDK, otherwise the build script will not be able to find the Ant tasks our build script uses for JavaFX deployment
 
 To use Eclipse, we recommend installing E(fx)clipse and SceneBuilder as well. To generate an importable Eclipse project run: gradle eclipse

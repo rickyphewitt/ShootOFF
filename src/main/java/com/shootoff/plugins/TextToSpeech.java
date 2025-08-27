@@ -70,7 +70,7 @@ public final class TextToSpeech {
 			final AudioInputStream audio = marytts.generateAudio(comment);
 			final AudioPlayer player = new AudioPlayer(audio);
 			player.start();
-		} catch (MaryConfigurationException | SynthesisException e) {
+		} catch (Exception e) {
 			logger.error("Error sythesizing text to voice", e);
 		}
 	}
