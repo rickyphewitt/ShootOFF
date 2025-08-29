@@ -37,3 +37,8 @@ To work with the ShootOFF source code you will need, at a minimum:
 To use Eclipse, we recommend installing E(fx)clipse and SceneBuilder as well. To generate an importable Eclipse project run: gradle eclipse
 
 To create a runnable JAR file in build/dist (run with $ build/dist/java -jar ShootOFF.jar): gradle fxJar
+
+
+Build/Run
+* `./gradlew build -x test`
+* `./gradlew run`
