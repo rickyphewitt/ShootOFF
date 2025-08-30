@@ -42,3 +42,4 @@ To create a runnable JAR file in build/dist (run with $ build/dist/java -jar Sho
 Build/Run
 * `./gradlew build -x test`
 * `./gradlew run`
+* `LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libv4l/v4l1compat.so ./gradlew run`

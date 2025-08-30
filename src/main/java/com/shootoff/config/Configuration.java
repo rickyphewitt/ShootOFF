@@ -128,7 +128,7 @@ public class Configuration {
 	private final String configName;
 
 	private boolean isFirstRun = false;
-	private boolean useErrorReporting = true;
+	private boolean useErrorReporting = false;
 	private final Map<String, URL> ipcams = new HashMap<>();
 	private final Map<String, String> ipcamCredentials = new HashMap<>();
 	private final Map<String, Camera> webcams = new HashMap<>();
