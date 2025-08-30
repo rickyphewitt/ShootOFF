@@ -3,6 +3,7 @@ package com.shootoff.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import javafx.embed.swing.JFXPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,6 @@ import com.shootoff.gui.targets.TargetView;
 import com.shootoff.targets.Target;
 
 import javafx.collections.FXCollections;
-//import javafx.embed.swing.JFXPanel;
 import javafx.scene.Group;
 
 public class MockCanvasManager extends CanvasManager {
@@ -27,7 +27,7 @@ public class MockCanvasManager extends CanvasManager {
 	public MockCanvasManager(Configuration config) {
 		super(new Group(), new ShootOFFController(), String.format("%d", System.nanoTime()),
 				FXCollections.observableArrayList());
-//		new JFXPanel(); // Initialize the JFX toolkit
+		new JFXPanel(); // Initialize the JFX toolkit
 		this.config = config;
 		this.cameraName = "Default";
 		this.useShotProcessors = false;
@@ -36,7 +36,7 @@ public class MockCanvasManager extends CanvasManager {
 	public MockCanvasManager(Configuration config, boolean useShotProcessors) {
 		super(new Group(), new ShootOFFController(), String.format("%d", System.nanoTime()),
 				FXCollections.observableArrayList());
-//		new JFXPanel(); // Initialize the JFX toolkit
+		new JFXPanel(); // Initialize the JFX toolkit
 		this.config = config;
 		this.cameraName = "Default";
 		this.useShotProcessors = useShotProcessors;

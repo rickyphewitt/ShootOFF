@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-//import javafx.embed.swing.JFXPanel;
+import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import org.junit.After;
 import org.junit.Before;
@@ -40,7 +40,7 @@ public class TestShootForScore {
 
 	@Before
 	public void setUp() throws ConfigurationException, UnsupportedEncodingException {
-//		new JFXPanel(); // Initialize the JFX toolkit
+		new JFXPanel(); // Initialize the JFX toolkit
 
 		stringOutStream = new PrintStream(stringOut, false, "UTF-8");
 		originalOut = System.out;
