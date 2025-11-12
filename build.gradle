@@ -6,23 +6,37 @@ import org.ajoberstar.grgit.Credentials
 
 buildscript {
     repositories {
-        jcenter()
         maven {
-            url  "http://repo.jenkins-ci.org/releases/"
+            url  "https://repo.jenkins-ci.org/releases/"
         }
     }
     dependencies {
         classpath group: 'org.codehaus.gpars', name: 'gpars', version: '1.1.0'
         classpath group: 'org.kohsuke', name: 'github-api', version: '1.+'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:2.0.3'
+        classpath 'org.openjfx:javafx-plugin:0.1.0'
+        classpath 'org.openpnp:opencv:2.4.+'
+        classpath 'org.slf4j:slf4j-api:1.7.+'
+
     }
+
+
 }
 
 plugins {
     id 'org.ajoberstar.grgit' version '1.3.2'
+    id("org.openjfx.javafxplugin") version "0.1.0"
+
+
 }
 
 apply plugin: 'java'
+apply plugin: 'java-library'
+apply plugin: 'application'
 apply plugin: 'eclipse'
+apply plugin: 'org.openjfx.javafxplugin'
+apply plugin: 'idea'
+
 
 eclipse {
     jdt {
@@ -31,10 +45,25 @@ eclipse {
     }
 }
 
+
+javafx {
+    version = "11"
+    modules = [ 'javafx.controls', 'javafx.fxml', 'javafx.media', 'javafx.swing', 'javafx.graphics', 'javafx.web', 'javafx.base']
+    platform = "linux"
+}
+
+configurations.default {
+    attributes {
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+        attribute(OperatingSystemFamily.OPERATING_SYSTEM_ATTRIBUTE, objects.named(OperatingSystemFamily, "linux"))
+        attribute(MachineArchitecture.ARCHITECTURE_ATTRIBUTE, objects.named(MachineArchitecture, "x86-64"))
+    }
+}
+
 def javaHome = System.properties['java.home']
 
 ext.extProp = new Properties()
-extProp.load(new FileInputStream("src/main/resources/version.properties"))
+extProp.load(new FileInputStream("/home/ricky/dev/ShootOFF/src/main/resources/version.properties"))
 def version = extProp["version"]
 
 def username = ''                                           // Username for GitHub (will request JIT via console input)
@@ -62,18 +91,42 @@ def keyStore = 'shootoff_cs.jks'
 def keyAlias = 'cscert'
 def tsaURL = 'http://timestamp.comodoca.com/rfc3161'
 
+def javaFxVersion = '0.1.0'
+
 repositories {
-    jcenter()
+    mavenCentral()
+    gradlePluginPortal()
     // This repository is directly included even though we use jcenter
     // because it makes it easier to get the smallest set of marytts that
     // meets our needs without missing the freetts dependency
     maven {
-        url  "http://dl.bintray.com/marytts/marytts/"
+        url "https://dl.bintray.com/marytts/marytts/"
     }
     maven {
         url "https://dl.bintray.com/phrack/maven/"
     }
+
+    // for xuggle
+    maven {
+        url "https://www.dcm4che.org/maven2/"
+    }
+
+    // for jtok
+    maven {
+        url "https://raw.githubusercontent.com/DFKI-MLT/Maven-Repository/main"
+    }
+
+    // for fast md5
+    maven {
+        url "https://nrgxnat.jfrog.io/artifactory/libs-release/"
+    }
+
+    // for jampack
+    maven {
+        url "https://nexus.terrestris.de/repository/public/"
+    }
 }
+
 
 configurations {
     jfxant
@@ -84,7 +137,11 @@ configurations {
 }
 
 dependencies {
-    jfxant files("$javaHome" + "/../lib/ant-javafx.jar")
+
+    // open jfx
+    implementation("org.openjfx.javafxplugin:org.openjfx.javafxplugin.gradle.plugin:0.1.0")
+
+//    jfxant files("$javaHome" + "/../lib/ant-javafx.jar")
 
     // FindBugs annotations to suppress warnings
     compile group: 'com.google.code.findbugs', name: 'annotations', version: '3.+'
@@ -107,10 +164,10 @@ dependencies {
     compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.+'
     compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
 
-    // tts dependencies
-    compile group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.1.+'
+    // tts dependencies - was 5.2.+ but didn't work, testing 5.1.+
+    compile group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.2.+'
+    compile group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.2.+'
+    compile group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.2.+'
 
     // xuggle for recording and playing back video
     compile group: 'xuggle', name: 'xuggle-xuggler', version: '5.4'
@@ -141,19 +198,10 @@ dependencies {
     compile 'com.google.zxing:core:3.3.0'
     compile 'com.google.code.gson:gson:2.8.0'
 
-    testCompile group: 'junit', name: 'junit', version: '4.+'
-    testCompile group: 'org.hamcrest', name: 'hamcrest-core', version: '1.+'
+    testImplementation group: 'junit', name: 'junit', version: '4.+'
+    testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.+'
 }
 
-test {
-    onOutput { descriptor, event ->
-       logger.lifecycle("Test: " + descriptor + " produced standard out/err: " + event.message )
-    }
-
-    testLogging {
-        exceptionFormat = 'full'
-    }
-}
 
 task copyEyeCam(type:Copy) {
     from 'eyeCam32.dll' into 'build/dist'
@@ -176,15 +224,20 @@ task copySounds(type:Copy) {
     from 'sounds' into 'build/dist/sounds'
 }
 
+
 task copyLibs(type:Copy) {
+
     from { configurations.default.collect { it.isDirectory() ? it : it } }
     into libTempDir
+    exclude "*.mac*"
+    exclude "*.win*"
     exclude "*jfxrt.jar"
     exclude "*java2html.jar"
     exclude "*junit*.jar"
     exclude "*slf4j-log4j12*.jar"
     exclude "*freetts-de*.jar"
 }
+
 
 // JWS is picky about whether or not it will access classes from non-trusted JARs,
 // thus mark all dependencies as trusted
@@ -202,7 +255,12 @@ task updateJars() {
     }
 }
 
-task fxJar(dependsOn: build) {
+
+project.setProperty("mainClassName", "com.shootoff.Main")
+
+
+
+jar {
     dependsOn('copyConfig')
     dependsOn('copyTargets')
     dependsOn('copyCourses')
@@ -210,69 +268,96 @@ task fxJar(dependsOn: build) {
     dependsOn('copyLibs')
     dependsOn('copyEyeCam')
 
-    description 'Create a runnable jar for ShootOFF'
-    group 'Package'
+    sourceSets.main.output.classesDirs.each { classesDir ->
+        inputs.dir classesDir
+    }
 
-    inputs.dir sourceSets.main.output.classesDir
     inputs.dir sourceSets.main.output.resourcesDir
-    outputs.file archivePath
+    outputs.upToDateWhen { false }
 
-    def antfx = NamespaceBuilder.newInstance(
-            ant,
-            'javafx:com.sun.javafx.tools.ant')
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 
-    ant.taskdef(
-            resource: 'com/sun/javafx/tools/ant/antlib.xml',
-            uri: 'javafx:com.sun.javafx.tools.ant',
-            classpath: configurations.jfxant.asPath)
+    manifest {
+        attributes (
+                "Implementation-Title": "foo",
+                'Main-Class': "com.shootoff.Start"
+        )
 
-    doLast {
-        antfx.application(
-                id: project.name,
-                name: project.name,
-                mainClass: mainClassName)
-
-        antfx.jar(destfile: archivePath) {
-            application(refid: project.name)
-            fileset(dir: sourceSets.main.output.classesDir)
-            fileset(dir: sourceSets.main.output.resourcesDir)
-            antfx.resources() {
-                fileset(dir: 'build/dist/', includes: 'libs/*.jar')
-            }
-            delegate.manifest {
-                attribute(name: 'Codebase', value: '*')
-                attribute(name: 'Permissions', value: 'all-permissions')
-                attribute(name: 'Trusted-Library', value: 'true')
-                attribute(name: 'Application-Name', value: 'ShootOFF')
-                attribute(name: 'Created-By', value: 'ShootOFF')
-            }
-        }
     }
 }
 
-// THIS IS USED BY THE CI SERVER TO CREATE THE ZIP UPLOADED TO THE
-// NIGHTLIES SERVER. DO NOT RENAME THIS WITHOUT ALSO UPDATING THE
-// TRAVIS-CI CONFIGURATION!
-task zipRelease(type: Zip) {
-    dependsOn('fxJar')
 
-    description 'Creates the release zip file (sans the diagnostic tool)'
-    group 'Release'
+//task fxJar(dependsOn: build) {
+//    dependsOn('copyConfig')
+//    dependsOn('copyTargets')
+//    dependsOn('copyCourses')
+//    dependsOn('copySounds')
+//    dependsOn('copyLibs')
+//    dependsOn('copyEyeCam')
+//
+//    description 'Create a runnable jar for ShootOFF'
+//    group 'Package'
+//
+//    inputs.dir sourceSets.main.output.classesDirs
+//    inputs.dir sourceSets.main.output.resourcesDir
+//    outputs.file archivePath
+//
+//    def antfx = NamespaceBuilder.newInstance(
+//            ant,
+//            'javafx:com.sun.javafx.tools.ant')
+//
+//    ant.taskdef(
+//            resource: 'com/sun/javafx/tools/ant/antlib.xml',
+//            uri: 'javafx:com.sun.javafx.tools.ant',
+//            classpath: configurations.jfxant.asPath)
+//
+//    doLast {
+//        antfx.application(
+//                id: project.name,
+//                name: project.name,
+//                mainClass: mainClassName)
+//
+//        antfx.jar(destfile: archivePath) {
+//            application(refid: project.name)
+//            fileset(dir: sourceSets.main.output.classesDir)
+//            fileset(dir: sourceSets.main.output.resourcesDir)
+//            antfx.resources() {
+//                fileset(dir: 'build/dist/', includes: 'libs/*.jar')
+//            }
+//            delegate.manifest {
+//                attribute(name: 'Codebase', value: '*')
+//                attribute(name: 'Permissions', value: 'all-permissions')
+//                attribute(name: 'Trusted-Library', value: 'true')
+//                attribute(name: 'Application-Name', value: 'ShootOFF')
+//                attribute(name: 'Created-By', value: 'ShootOFF')
+//            }
+//        }
+//    }
+//}
 
-    from(file(dist)) {
-        include 'targets/**'
-        include 'sounds/**'
-        include 'courses/**'
-        include 'libs/**/*.jar'
-        include 'shootoff.properties'
-        include 'ShootOFF.jar'
-        include 'eyeCam32.dll'
-        include 'eyeCam64.dll'
-    }
-
-    archiveName = releaseZip
-    destinationDir = file(dist)
-}
+//// THIS IS USED BY THE CI SERVER TO CREATE THE ZIP UPLOADED TO THE
+//// NIGHTLIES SERVER. DO NOT RENAME THIS WITHOUT ALSO UPDATING THE
+//// TRAVIS-CI CONFIGURATION!
+//task zipRelease(type: Zip) {
+//    dependsOn('fxJar')
+//
+//    description 'Creates the release zip file (sans the diagnostic tool)'
+//    group 'Release'
+//
+//    from(file(dist)) {
+//        include 'targets/**'
+//        include 'sounds/**'
+//        include 'courses/**'
+//        include 'libs/**/*.jar'
+//        include 'shootoff.properties'
+//        include 'ShootOFF.jar'
+//        include 'eyeCam32.dll'
+//        include 'eyeCam64.dll'
+//    }
+//
+//    archiveName = releaseZip
+//    destinationDir = file(dist)
+//}
 
 task getDiagnosticJar() {
 	doFirst
@@ -312,425 +397,425 @@ task getDiagnosticJar() {
       }
 }
 
-// 1. Add latest version of diagnostic tool to release zip
-// 2. Create release on GH and upload the zip
-// 3. Upload the xml file that contains version metadata to let users know a new version is out
-task pushZipRelease(dependsOn: zipRelease) {
-    description 'Add diagnostic tool to release zip, create GitHub release and upload ' +
-		'the zip, and update and commit new version metadata to gh-pages'
-    group 'Release'
-
-    dependsOn(getDiagnosticJar)
-
-    doLast{
-        if (username == '' && password == '') {
-            username = System.console().readLine('\nPlease enter GitHub username: ')
-            password = System.console().readPassword('Please enter GitHub password: ')
-            password = new String(password)
-        }
-
-        if (!gh) gh = GitHub.connectUsingPassword(username, password)
-
-        if (!gh.isCredentialValid()) {
-            throw new InvalidUserDataException('Incorrect GitHub credentials')
-        }
-
-
-        ant.zip(update: "true",
-                basedir: "${dist}",
-                destfile: "${dist}/${releaseZip}",
-                includes: "${diagnosticsJar}"
-               )
-
-        // Create GitHub release
-
-        def ghMainRepo = gh.getRepository('phrack/ShootOFF-NG')
-        def repoReleaseBuilder = ghMainRepo.createRelease('v' + version + '-FINAL')
-        repoReleaseBuilder.body('1. Download ' + releaseZip + ' and extract it.\n' +
-                            '2. Double click ShootOFF.jar.')
-        repoReleaseBuilder.draft(true)
-        repoReleaseBuilder.commitish('master')
-        repoReleaseBuilder.name('shootoff-' + version + '-final')
-        def repoRelease = repoReleaseBuilder.create()
-        repoRelease.uploadAsset(new File(dist + releaseZip), 'application/zip')
-
-
-        // Upload MSI if it exists
-        def msiFile = new File(bundleDir + 'bundles/' + releaseMsi)
-        if (msiFile.exists())
-        {
-        	repoRelease.uploadAsset(msiFile, 'application/msi')
-        }
-
-        // Update version metadata
-
-        grgit = Grgit.open('.', new Credentials(username: username, password: password))
-        grgit.checkout(branch: 'gh-pages', createBranch: false)
-
-        def versionMetadata = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
-            '<stableRelease version=\"' + version + '\" ' +
-            'download=\"https://github.com/phrack/ShootOFF/releases/download/v' + version +
-                '-FINAL/' + releaseZip + '\" />'
-
-        def versionFile = new File('shootoff-version.xml')
-        versionFile.write(versionMetadata, 'UTF-8')
-
-        grgit.commit(message: 'Update version file to ' + version, all: true)
-        grgit.push()
-
-        grgit.checkout(branch: 'master', createBranch: false)
-        grgit.close()
-    }
-}
-
-task fxSignedJar(dependsOn: fxJar) {
-    description 'Digitally sign ShootOFF.jar (generated by fxJar task)'
-    group 'Package'
-
-    doFirst {
-        assert file(keyStore).exists()
-    }
-
-    doLast {
-        def keyPassword = System.console().readPassword("\nPlease enter key passphrase: ")
-        keyPassword = new String(keyPassword)
-
-        ant.signjar(
-                jar: archivePath,
-                keystore: keyStore,
-                storepass: keyPassword,
-                alias: keyAlias,
-                tsaurl: tsaURL
-        )
-    }
-}
-
-task fxJarWritableResources() {
-    def antfx = NamespaceBuilder.newInstance(
-            ant,
-            'javafx:com.sun.javafx.tools.ant')
-
-    doLast {
-        ant.jar(destfile: webstartDir + writableResources) {
-            fileset(dir: 'build/dist/', includes: 'courses/**')
-            fileset(dir: 'build/dist/', includes: 'targets/**')
-            fileset(dir: 'build/dist/', includes: 'sounds/**')
-            fileset(dir: 'build/dist/', includes: 'shootoff.properties')
-
-            delegate.manifest {
-                attribute(name: 'Trusted-Library', value: 'true')
-            }
-        }
-    }
-}
-
-task msiRelease() {
-    group 'Release'
-
-    dependsOn(fxJar)
-    dependsOn('updateJars')
-    dependsOn(getDiagnosticJar)
-
-    def antfx = NamespaceBuilder.newInstance(
-            ant,
-            'javafx:com.sun.javafx.tools.ant')
-
-    doLast {
-        antfx.deploy(
-        		verbose: true,
-                outdir: bundleDir,
-                outfile: 'ShootOFF',
-                offlineAllowed: true,
-                nativeBundles: 'msi',
-        ) {
-            antfx.application(
-                mainClass: mainClassName,
-                name: 'ShootOFF',
-                toolkit: 'fx',
-                version: version
-            )
-
-            antfx.preferences(
-            	install: false,
-            	menu: true,
-            	shortcut: true
-            )
-
-            antfx.platform(
-                javafx: '8.0+',
-                j2se: '1.8+',
-            )
-
-            antfx.info(
-                title: project.name,
-                vendor: "ShootOFF",
-                description: 'A virtual shooting range to enhance laser dry fire training'
-            ) {
-                antfx.icon(
-                    kind: 'default',
-                    href: 'windows_icon.ico',
-                    width: '256',
-                    height: '256'
-                )
-            }
-
-            antfx.resources {
-                antfx.fileset(
-                    dir: 'build/dist/',
-                    includes: 'ShootOFF.jar'
-                )
-
-                antfx.fileset(
-                    dir: '',
-                    includes: 'shootoff.properties'
-                )
-
-                antfx.fileset(
-                	dir: 'build/dist/',
-                	includes: diagnosticsJar
-                )
-
-                antfx.fileset(
-                    dir: '',
-                    includes: 'LICENSE'
-                )
-
-                antfx.fileset(
-                    dir: '',
-        			includes: 'targets/**',
-                )
-
-                antfx.fileset(
-                    dir: '',
-        			includes: 'courses/**',
-                )
-
-                antfx.fileset(
-                    dir: '',
-       			 	includes: 'sounds/**',
-                )
-                antfx.fileset(
-                    dir: 'build/dist/',
-                    includes: 'libs/*.jar'
-                )
-
-
-                antfx.fileset(
-                    type: 'icon',
-                    dir: 'src/main/resources/images/',
-                    includes: 'windows_icon.ico'
-                )
-            }
-        }
-    }
-}
-
-
-task fxWebstartSignedJar() {
-    dependsOn(fxJar)
-    dependsOn('updateJars')
-    dependsOn(fxJarWritableResources)
-
-    doFirst {
-        assert file(keyStore).exists()
-    }
-
-    doLast {
-        def keyPassword = System.console().readPassword("\nPlease enter key passphrase: ")
-        keyPassword = new String(keyPassword)
-
-        ant.signjar(
-            keystore: keyStore,
-            storepass: keyPassword,
-            alias: keyAlias,
-            tsaurl: tsaURL
-        ) {
-                ant.fileset(
-                    dir: 'build/dist/',
-                    includes: '*.jar'
-                )
-        }
-
-        def path = ant.path {
-                ant.fileset(
-                    dir: 'build/dist/',
-                    includes: 'libs/*.jar',
-                )
-        }
-
-        GParsPool.withPool {
-            path.list().eachParallel { f ->
-                def antLocal = project.createAntBuilder()
-                antLocal.signjar(
-                        jar: f,
-                        keystore: keyStore,
-                        storepass: keyPassword,
-                        alias: keyAlias,
-                        tsaurl: tsaURL
-                )
-            }
-        }
-    }
-}
-
-task fxRelease(dependsOn: fxWebstartSignedJar) {
-    def antfx = NamespaceBuilder.newInstance(
-            ant,
-            'javafx:com.sun.javafx.tools.ant')
-
-    doLast {
-        antfx.deploy(
-                codebase: "http://shootoffapp.com/jws/",
-                outdir: webstartDir,
-                outfile: project.name,
-        ) {
-            antfx.application(
-                mainClass: mainClassName,
-                name: 'ShootOFF',
-                toolkit: 'fx',
-                version: version
-            )
-
-            antfx.platform(
-                javafx: '8.0+',
-                j2se: '1.8+'
-            )
-
-            antfx.info(
-                title: project.name,
-                vendor: project.name,
-                license: license,
-                description: 'A virtual shooting range to enhance laser dry fire training.'
-            ) {
-                antfx.icon(
-                    kind: 'shortcut',
-                    href: 'icon_32x32.png',
-                    width: '32',
-                    height: '32'
-                )
-            }
-
-            antfx.permissions(
-                elevated: true,
-                cachecertificates: true
-            )
-
-            antfx.preferences(
-                shortcut: true,
-                install: false,
-                menu: false
-            )
-
-            antfx.resources {
-                antfx.fileset(
-                    dir: 'build/dist/',
-                    includes: 'ShootOFF.jar'
-                )
-
-                antfx.fileset(
-                    dir: 'build/dist/',
-                    includes: 'libs/*.jar'
-                )
-
-                antfx.fileset(
-                    type: 'icon',
-                    dir: 'src/main/resources/images/',
-                    includes: 'icon_32x32.png'
-                )
-            }
-        }
-
-        def jnlpPath = webstartDir + project.name + '.jnlp'
-        String contents = new File(jnlpPath).getText('UTF-8')
-
-        // Can't update HREF in jnlp tag with antfx
-        contents = contents.replace('href=\"ShootOFF.jnlp\">',
-            'href=\"http://shootoffapp.com/jws/ShootOFF.jnlp\">')
-
-        // antfx.icon is not working for jnlp
-        contents = contents.replace('<offline-allowed/>',
-            '<icon href=\"icon_32x32.png\" width=\"32\" height=\"32\" />\n    <offline-allowed/>')
-
-        new File(jnlpPath).write(contents, 'UTF-8')
-    }
-}
-
-task copyJWSLibs(type: Copy) {
-    from webstartDir + 'libs'
-    into jwsDir + 'libs'
-}
-
-task copyJWSConfig(type: Copy) {
-    from webstartDir + writableResources
-    from webstartDir + project.name + '.jnlp'
-    from webstartDir + 'ShootOFF.jar'
-    into jwsDir
-}
-
-task pushFxRelease(dependsOn: fxRelease) {
-    description 'Replace old JNLP artifacts with new ones in gh-pages'
-    group 'Release'
-
-    doLast {
-        if (username == '' && password == '') {
-            username = System.console().readLine('\nPlease enter GitHub username: ')
-            password = System.console().readPassword('Please enter GitHub password: ')
-            password = new String(password)
-        }
-
-        grgit = Grgit.open('.', new Credentials(username: username, password: password))
-        grgit.checkout(branch: 'gh-pages', createBranch: false)
-
-        delete jwsDir + 'libs'
-        copyJWSLibs.execute()
-        copyJWSConfig.execute()
-
-        grgit.add(patterns: [jwsDir + 'libs'])
-
-        def resourcesArchive = new File(jwsDir + writableResources)
-
-        def resourcesMetadata = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
-            '<resources version=\"' + version + '\" ' +
-            'fileSize=\"' + resourcesArchive.length() + '\" />'
-
-        def resourcesFile = new File(jwsDir + writableResourcesMetadata)
-        resourcesFile.write(resourcesMetadata, 'UTF-8')
-
-        grgit.commit(message: 'Update JWS to ' + version, all: true)
-        grgit.push()
-
-        grgit.checkout(branch: 'master', createBranch: false)
-        grgit.close()
-    }
-}
-
-task release() {
-    description 'Perform all automated tasks to release a new version of ShootOFF and print ' +
-                'todo list for remaining tasks'
-    group 'Release'
-
-    dependsOn(pushZipRelease)
-    dependsOn(pushFxRelease)
-}
-
-task releaseWithMsi() {
-    description 'Perform all automated tasks to release a new version of ShootOFF and print ' +
-                'todo list for remaining tasks'
-    group 'Release'
-
-    dependsOn(msiRelease)
-    dependsOn(pushZipRelease)
-    dependsOn(pushFxRelease)
-}
-
-release.doLast {
-    // Some of these are worth trying to automate later!
-    print("-----------------------------------------\n" +
-          "REMAINING RELEASE TASKS\n" +
-          "-----------------------------------------\n\n" +
-          "- Publish release draft\n" +
-          "- Update website\n" +
-          "- Make Reddit release post\n" +
-          "- Make Twitter release post\n" +
-          "- Make release email")
-}
+//// 1. Add latest version of diagnostic tool to release zip
+//// 2. Create release on GH and upload the zip
+//// 3. Upload the xml file that contains version metadata to let users know a new version is out
+//task pushZipRelease(dependsOn: zipRelease) {
+//    description 'Add diagnostic tool to release zip, create GitHub release and upload ' +
+//		'the zip, and update and commit new version metadata to gh-pages'
+//    group 'Release'
+//
+//    dependsOn(getDiagnosticJar)
+//
+//    doLast{
+//        if (username == '' && password == '') {
+//            username = System.console().readLine('\nPlease enter GitHub username: ')
+//            password = System.console().readPassword('Please enter GitHub password: ')
+//            password = new String(password)
+//        }
+//
+//        if (!gh) gh = GitHub.connectUsingPassword(username, password)
+//
+//        if (!gh.isCredentialValid()) {
+//            throw new InvalidUserDataException('Incorrect GitHub credentials')
+//        }
+//
+//
+//        ant.zip(update: "true",
+//                basedir: "${dist}",
+//                destfile: "${dist}/${releaseZip}",
+//                includes: "${diagnosticsJar}"
+//               )
+//
+//        // Create GitHub release
+//
+//        def ghMainRepo = gh.getRepository('phrack/ShootOFF-NG')
+//        def repoReleaseBuilder = ghMainRepo.createRelease('v' + version + '-FINAL')
+//        repoReleaseBuilder.body('1. Download ' + releaseZip + ' and extract it.\n' +
+//                            '2. Double click ShootOFF.jar.')
+//        repoReleaseBuilder.draft(true)
+//        repoReleaseBuilder.commitish('master')
+//        repoReleaseBuilder.name('shootoff-' + version + '-final')
+//        def repoRelease = repoReleaseBuilder.create()
+//        repoRelease.uploadAsset(new File(dist + releaseZip), 'application/zip')
+//
+//
+//        // Upload MSI if it exists
+//        def msiFile = new File(bundleDir + 'bundles/' + releaseMsi)
+//        if (msiFile.exists())
+//        {
+//        	repoRelease.uploadAsset(msiFile, 'application/msi')
+//        }
+//
+//        // Update version metadata
+//
+//        grgit = Grgit.open('.', new Credentials(username: username, password: password))
+//        grgit.checkout(branch: 'gh-pages', createBranch: false)
+//
+//        def versionMetadata = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+//            '<stableRelease version=\"' + version + '\" ' +
+//            'download=\"https://github.com/phrack/ShootOFF/releases/download/v' + version +
+//                '-FINAL/' + releaseZip + '\" />'
+//
+//        def versionFile = new File('shootoff-version.xml')
+//        versionFile.write(versionMetadata, 'UTF-8')
+//
+//        grgit.commit(message: 'Update version file to ' + version, all: true)
+//        grgit.push()
+//
+//        grgit.checkout(branch: 'master', createBranch: false)
+//        grgit.close()
+//    }
+//}
+//
+//task fxSignedJar(dependsOn: fxJar) {
+//    description 'Digitally sign ShootOFF.jar (generated by fxJar task)'
+//    group 'Package'
+//
+//    doFirst {
+//        assert file(keyStore).exists()
+//    }
+//
+//    doLast {
+//        def keyPassword = System.console().readPassword("\nPlease enter key passphrase: ")
+//        keyPassword = new String(keyPassword)
+//
+//        ant.signjar(
+//                jar: archivePath,
+//                keystore: keyStore,
+//                storepass: keyPassword,
+//                alias: keyAlias,
+//                tsaurl: tsaURL
+//        )
+//    }
+//}
+//
+//task fxJarWritableResources() {
+//    def antfx = NamespaceBuilder.newInstance(
+//            ant,
+//            'javafx:com.sun.javafx.tools.ant')
+//
+//    doLast {
+//        ant.jar(destfile: webstartDir + writableResources) {
+//            fileset(dir: 'build/dist/', includes: 'courses/**')
+//            fileset(dir: 'build/dist/', includes: 'targets/**')
+//            fileset(dir: 'build/dist/', includes: 'sounds/**')
+//            fileset(dir: 'build/dist/', includes: 'shootoff.properties')
+//
+//            delegate.manifest {
+//                attribute(name: 'Trusted-Library', value: 'true')
+//            }
+//        }
+//    }
+//}
+//
+//task msiRelease() {
+//    group 'Release'
+//
+//    dependsOn(fxJar)
+//    dependsOn('updateJars')
+//    dependsOn(getDiagnosticJar)
+//
+//    def antfx = NamespaceBuilder.newInstance(
+//            ant,
+//            'javafx:com.sun.javafx.tools.ant')
+//
+//    doLast {
+//        antfx.deploy(
+//        		verbose: true,
+//                outdir: bundleDir,
+//                outfile: 'ShootOFF',
+//                offlineAllowed: true,
+//                nativeBundles: 'msi',
+//        ) {
+//            antfx.application(
+//                mainClass: mainClassName,
+//                name: 'ShootOFF',
+//                toolkit: 'fx',
+//                version: version
+//            )
+//
+//            antfx.preferences(
+//            	install: false,
+//            	menu: true,
+//            	shortcut: true
+//            )
+//
+//            antfx.platform(
+//                javafx: '8.0+',
+//                j2se: '1.8+',
+//            )
+//
+//            antfx.info(
+//                title: project.name,
+//                vendor: "ShootOFF",
+//                description: 'A virtual shooting range to enhance laser dry fire training'
+//            ) {
+//                antfx.icon(
+//                    kind: 'default',
+//                    href: 'windows_icon.ico',
+//                    width: '256',
+//                    height: '256'
+//                )
+//            }
+//
+//            antfx.resources {
+//                antfx.fileset(
+//                    dir: 'build/dist/',
+//                    includes: 'ShootOFF.jar'
+//                )
+//
+//                antfx.fileset(
+//                    dir: '',
+//                    includes: 'shootoff.properties'
+//                )
+//
+//                antfx.fileset(
+//                	dir: 'build/dist/',
+//                	includes: diagnosticsJar
+//                )
+//
+//                antfx.fileset(
+//                    dir: '',
+//                    includes: 'LICENSE'
+//                )
+//
+//                antfx.fileset(
+//                    dir: '',
+//        			includes: 'targets/**',
+//                )
+//
+//                antfx.fileset(
+//                    dir: '',
+//        			includes: 'courses/**',
+//                )
+//
+//                antfx.fileset(
+//                    dir: '',
+//       			 	includes: 'sounds/**',
+//                )
+//                antfx.fileset(
+//                    dir: 'build/dist/',
+//                    includes: 'libs/*.jar'
+//                )
+//
+//
+//                antfx.fileset(
+//                    type: 'icon',
+//                    dir: 'src/main/resources/images/',
+//                    includes: 'windows_icon.ico'
+//                )
+//            }
+//        }
+//    }
+//}
+//
+//
+//task fxWebstartSignedJar() {
+//    dependsOn(fxJar)
+//    dependsOn('updateJars')
+//    dependsOn(fxJarWritableResources)
+//
+//    doFirst {
+//        assert file(keyStore).exists()
+//    }
+//
+//    doLast {
+//        def keyPassword = System.console().readPassword("\nPlease enter key passphrase: ")
+//        keyPassword = new String(keyPassword)
+//
+//        ant.signjar(
+//            keystore: keyStore,
+//            storepass: keyPassword,
+//            alias: keyAlias,
+//            tsaurl: tsaURL
+//        ) {
+//                ant.fileset(
+//                    dir: 'build/dist/',
+//                    includes: '*.jar'
+//                )
+//        }
+//
+//        def path = ant.path {
+//                ant.fileset(
+//                    dir: 'build/dist/',
+//                    includes: 'libs/*.jar',
+//                )
+//        }
+//
+//        GParsPool.withPool {
+//            path.list().eachParallel { f ->
+//                def antLocal = project.createAntBuilder()
+//                antLocal.signjar(
+//                        jar: f,
+//                        keystore: keyStore,
+//                        storepass: keyPassword,
+//                        alias: keyAlias,
+//                        tsaurl: tsaURL
+//                )
+//            }
+//        }
+//    }
+//}
+//
+//task fxRelease(dependsOn: fxWebstartSignedJar) {
+//    def antfx = NamespaceBuilder.newInstance(
+//            ant,
+//            'javafx:com.sun.javafx.tools.ant')
+//
+//    doLast {
+//        antfx.deploy(
+//                codebase: "http://shootoffapp.com/jws/",
+//                outdir: webstartDir,
+//                outfile: project.name,
+//        ) {
+//            antfx.application(
+//                mainClass: mainClassName,
+//                name: 'ShootOFF',
+//                toolkit: 'fx',
+//                version: version
+//            )
+//
+//            antfx.platform(
+//                javafx: '8.0+',
+//                j2se: '1.8+'
+//            )
+//
+//            antfx.info(
+//                title: project.name,
+//                vendor: project.name,
+//                license: license,
+//                description: 'A virtual shooting range to enhance laser dry fire training.'
+//            ) {
+//                antfx.icon(
+//                    kind: 'shortcut',
+//                    href: 'icon_32x32.png',
+//                    width: '32',
+//                    height: '32'
+//                )
+//            }
+//
+//            antfx.permissions(
+//                elevated: true,
+//                cachecertificates: true
+//            )
+//
+//            antfx.preferences(
+//                shortcut: true,
+//                install: false,
+//                menu: false
+//            )
+//
+//            antfx.resources {
+//                antfx.fileset(
+//                    dir: 'build/dist/',
+//                    includes: 'ShootOFF.jar'
+//                )
+//
+//                antfx.fileset(
+//                    dir: 'build/dist/',
+//                    includes: 'libs/*.jar'
+//                )
+//
+//                antfx.fileset(
+//                    type: 'icon',
+//                    dir: 'src/main/resources/images/',
+//                    includes: 'icon_32x32.png'
+//                )
+//            }
+//        }
+//
+//        def jnlpPath = webstartDir + project.name + '.jnlp'
+//        String contents = new File(jnlpPath).getText('UTF-8')
+//
+//        // Can't update HREF in jnlp tag with antfx
+//        contents = contents.replace('href=\"ShootOFF.jnlp\">',
+//            'href=\"http://shootoffapp.com/jws/ShootOFF.jnlp\">')
+//
+//        // antfx.icon is not working for jnlp
+//        contents = contents.replace('<offline-allowed/>',
+//            '<icon href=\"icon_32x32.png\" width=\"32\" height=\"32\" />\n    <offline-allowed/>')
+//
+//        new File(jnlpPath).write(contents, 'UTF-8')
+//    }
+//}
+//
+//task copyJWSLibs(type: Copy) {
+//    from webstartDir + 'libs'
+//    into jwsDir + 'libs'
+//}
+//
+//task copyJWSConfig(type: Copy) {
+//    from webstartDir + writableResources
+//    from webstartDir + project.name + '.jnlp'
+//    from webstartDir + 'ShootOFF.jar'
+//    into jwsDir
+//}
+//
+//task pushFxRelease(dependsOn: fxRelease) {
+//    description 'Replace old JNLP artifacts with new ones in gh-pages'
+//    group 'Release'
+//
+//    doLast {
+//        if (username == '' && password == '') {
+//            username = System.console().readLine('\nPlease enter GitHub username: ')
+//            password = System.console().readPassword('Please enter GitHub password: ')
+//            password = new String(password)
+//        }
+//
+//        grgit = Grgit.open('.', new Credentials(username: username, password: password))
+//        grgit.checkout(branch: 'gh-pages', createBranch: false)
+//
+//        delete jwsDir + 'libs'
+//        copyJWSLibs.execute()
+//        copyJWSConfig.execute()
+//
+//        grgit.add(patterns: [jwsDir + 'libs'])
+//
+//        def resourcesArchive = new File(jwsDir + writableResources)
+//
+//        def resourcesMetadata = '<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n' +
+//            '<resources version=\"' + version + '\" ' +
+//            'fileSize=\"' + resourcesArchive.length() + '\" />'
+//
+//        def resourcesFile = new File(jwsDir + writableResourcesMetadata)
+//        resourcesFile.write(resourcesMetadata, 'UTF-8')
+//
+//        grgit.commit(message: 'Update JWS to ' + version, all: true)
+//        grgit.push()
+//
+//        grgit.checkout(branch: 'master', createBranch: false)
+//        grgit.close()
+//    }
+//}
+//
+//task release() {
+//    description 'Perform all automated tasks to release a new version of ShootOFF and print ' +
+//                'todo list for remaining tasks'
+//    group 'Release'
+//
+//    dependsOn(pushZipRelease)
+//    dependsOn(pushFxRelease)
+//}
+//
+//task releaseWithMsi() {
+//    description 'Perform all automated tasks to release a new version of ShootOFF and print ' +
+//                'todo list for remaining tasks'
+//    group 'Release'
+//
+//    dependsOn(msiRelease)
+//    dependsOn(pushZipRelease)
+//    dependsOn(pushFxRelease)
+//}
+
+//release.doLast {
+//    // Some of these are worth trying to automate later!
+//    print("-----------------------------------------\n" +
+//          "REMAINING RELEASE TASKS\n" +
+//          "-----------------------------------------\n\n" +
+//          "- Publish release draft\n" +
+//          "- Update website\n" +
+//          "- Make Reddit release post\n" +
+//          "- Make Twitter release post\n" +
+//          "- Make release email")
+//}

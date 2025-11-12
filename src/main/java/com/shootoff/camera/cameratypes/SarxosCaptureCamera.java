@@ -88,6 +88,7 @@ public class SarxosCaptureCamera extends CalculatedFPSCamera {
 		} catch (final Exception e) {
 			// Sometimes there is a race condition on closing the camera vs.
 			// read()
+            logger.warn("Something happened with the camera, {}", e);
 			return null;
 		}
 
@@ -119,9 +120,9 @@ public class SarxosCaptureCamera extends CalculatedFPSCamera {
 		final boolean open = camera.open(cameraIndex);
 
 		if (open) {
-			// Set the max FPS to 60. If we don't set this it defaults
-			// to 30, which unnecessarily hampers higher end cameras
-			camera.set(5, 60);
+//			// Set the max FPS to 60. If we don't set this it defaults
+//			// to 30, which unnecessarily hampers higher end cameras
+//			camera.set(5, 60);
 
 			CameraFactory.openCamerasAdd(this);
 		}
