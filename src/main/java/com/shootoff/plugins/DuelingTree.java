@@ -37,7 +37,7 @@ public class DuelingTree extends ProjectorTrainingExerciseBase implements Traini
 	private final static String HIT_COL_NAME = "Hit By";
 	private final static int HIT_COL_WIDTH = 60;
 
-	private static final int NEW_ROUND_DELAY = 5; // s
+	private static int NEW_ROUND_DELAY = 5; // s
 	private static final int CORE_POOL_SIZE = 2;
 	private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(CORE_POOL_SIZE,
 			new NamedThreadFactory("DuelingTreeExercise"));
