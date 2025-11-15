@@ -25,8 +25,10 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
-import org.opencv.highgui.VideoCapture;
+
+import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -163,18 +165,18 @@ public class SarxosCaptureCamera extends CalculatedFPSCamera {
 
 	@Override
 	public void setViewSize(final Dimension size) {
-		camera.set(Highgui.CV_CAP_PROP_FRAME_WIDTH, size.getWidth());
-		camera.set(Highgui.CV_CAP_PROP_FRAME_HEIGHT, size.getHeight());
+		camera.set(Videoio.CAP_PROP_FRAME_WIDTH, size.getWidth());
+		camera.set(Videoio.CAP_PROP_FRAME_HEIGHT, size.getHeight());
 	}
 
 	@Override
 	public Dimension getViewSize() {
-		return new Dimension((int) camera.get(Highgui.CV_CAP_PROP_FRAME_WIDTH),
-				(int) camera.get(Highgui.CV_CAP_PROP_FRAME_HEIGHT));
+		return new Dimension((int) camera.get(Videoio.CAP_PROP_FRAME_WIDTH),
+				(int) camera.get(Videoio.CAP_PROP_FRAME_HEIGHT));
 	}
 
 	public void launchCameraSettings() {
-		camera.set(Highgui.CV_CAP_PROP_SETTINGS, 1);
+		camera.set(Videoio.CAP_PROP_SETTINGS, 1);
 	}
 
 	@Override

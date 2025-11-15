@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.opencv.core.Mat;
-import org.opencv.highgui.Highgui;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.openimaj.util.function.Operation;
 import org.openimaj.util.parallel.GlobalExecutorPool;
@@ -439,7 +439,7 @@ public final class JavaShotDetector extends FrameProcessingShotDetector {
 					(int) pc.centerPixelY);
 			final File file = new File(filename);
 			filename = file.toString();
-			Highgui.imwrite(filename, debugFrame);
+            Imgcodecs.imwrite(filename, debugFrame);
 
 			for (final Pixel p : pc) {
 				if (javafx.scene.paint.Color.GREEN.equals(color.get())) {
@@ -455,7 +455,7 @@ public final class JavaShotDetector extends FrameProcessingShotDetector {
 					String.format("shot-%d-%d-%d.png", cameraManager.cameraTimeToShotTime(workingFrame.getTimestamp()),
 							(int) pc.centerPixelX, (int) pc.centerPixelY));
 			filename = outputfile.toString();
-			Highgui.imwrite(filename, debugFrame);
+            Imgcodecs.imwrite(filename, debugFrame);
 		}
 	}
 

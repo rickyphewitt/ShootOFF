@@ -155,7 +155,7 @@ dependencies {
     }
 
     //OpenCV
-    api 'org.openpnp:opencv:2.4.+'
+    implementation 'org.openpnp:opencv:4.9.+'
 
     // OSHI to collect HW and system state data
     api group: 'com.github.dblock', name: 'oshi-core', version: '3.+'
