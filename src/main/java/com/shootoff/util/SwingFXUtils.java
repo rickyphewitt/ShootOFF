@@ -35,7 +35,10 @@ import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.image.WritablePixelFormat;
-import sun.awt.image.IntegerComponentRaster;
+import java.awt.*;
+import java.awt.image.DataBufferInt;
+import java.awt.image.SinglePixelPackedSampleModel;
+import java.awt.image.WritableRaster;
 
 /**
  * This class provides utility methods for converting data types between
@@ -117,16 +120,18 @@ public class SwingFXUtils {
 		}
 
 		PixelWriter pw = wimg.getPixelWriter();
-		IntegerComponentRaster icr = (IntegerComponentRaster) bimg.getRaster();
+        WritableRaster icr =  bimg.getRaster();
 
-		int data[] = icr.getDataStorage();
-		int offset = icr.getDataOffset(0);
-		int scan = icr.getScanlineStride();
+        DataBufferInt data = (DataBufferInt) icr.getDataBuffer();
+        int[] pixels = data.getData();
+        int offset = data.getOffset();
+        SinglePixelPackedSampleModel sm = (SinglePixelPackedSampleModel) icr.getSampleModel();
+        int scan = sm.getScanlineStride();
 
 		PixelFormat<IntBuffer> pf = (bimg.isAlphaPremultiplied() ? PixelFormat.getIntArgbPreInstance()
 				: PixelFormat.getIntArgbInstance());
 
-		pw.setPixels(0, 0, bw, bh, pf, data, offset, scan);
+		pw.setPixels(0, 0, bw, bh, pf, pixels, offset, scan);
 
 		return wimg;
 	}
@@ -261,13 +266,16 @@ public class SwingFXUtils {
 			bimg = new BufferedImage(iw, ih, prefBimgType);
 		}
 
-		IntegerComponentRaster icr = (IntegerComponentRaster) bimg.getRaster();
-		int offset = icr.getDataOffset(0);
-		int scan = icr.getScanlineStride();
-		int data[] = icr.getDataStorage();
+        WritableRaster icr =  bimg.getRaster();
+
+        DataBufferInt data = (DataBufferInt) icr.getDataBuffer();
+        int[] pixels = data.getData();
+        int offset = data.getOffset();
+        SinglePixelPackedSampleModel sm = (SinglePixelPackedSampleModel) icr.getSampleModel();
+        int scan = sm.getScanlineStride();
 
 		WritablePixelFormat<IntBuffer> pf = getAssociatedPixelFormat(bimg);
-		pr.getPixels(0, 0, iw, ih, pf, data, offset, scan);
+		pr.getPixels(0, 0, iw, ih, pf, pixels, offset, scan);
 
 		return bimg;
 	}

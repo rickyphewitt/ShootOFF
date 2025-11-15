@@ -18,6 +18,7 @@
 
 package com.shootoff;
 
+import java.awt.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,9 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.file.Files;
 import java.util.Enumeration;
 import java.util.Optional;
@@ -50,8 +49,6 @@ import com.shootoff.plugins.TextToSpeech;
 import com.shootoff.util.HardwareData;
 import com.shootoff.util.SystemInfo;
 import com.shootoff.util.VersionChecker;
-import com.sun.deploy.uitoolkit.impl.fx.HostServicesFactory;
-import com.sun.javafx.application.HostServicesDelegate;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import javafx.application.Application;
@@ -73,6 +70,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+
+import javax.swing.event.HyperlinkEvent;
 
 public class Main extends Application {
 	private static final Logger logger = LoggerFactory.getLogger(Main.class);
@@ -519,9 +518,30 @@ public class Main extends Application {
 
 				final Hyperlink lnk = new Hyperlink(link);
 
-				lnk.setOnAction((event) -> {
-					final HostServicesDelegate hostServices = HostServicesFactory.getInstance(this);
-					hostServices.showDocument(link);
+                lnk.setOnAction((event) -> {
+
+                    final Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+                    if (desktop != null && desktop.isSupported(Desktop.Action.OPEN)) {
+
+                        final URI uriLink;
+
+                        try {
+                            uriLink = new URI(link);
+                        } catch (URISyntaxException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        try {
+                            desktop.browse(uriLink);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+
+                    } else {
+                        throw new UnsupportedOperationException("Open action not supported");
+                    }
+
 					lnk.setVisited(true);
 				});
 

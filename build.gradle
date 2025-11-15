@@ -25,6 +25,8 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.openjfx.javafxplugin'
+// For a Java library module
+apply plugin: 'java-library'
 
 eclipse {
     jdt {
@@ -71,6 +73,7 @@ def keyAlias = 'cscert'
 def tsaURL = 'http://timestamp.comodoca.com/rfc3161'
 
 repositories {
+    mavenCentral()
     // This repository is directly included even though we use jcenter
     // because it makes it easier to get the smallest set of marytts that
     // meets our needs without missing the freetts dependency
@@ -79,6 +82,25 @@ repositories {
     }
     maven {
         url "https://dl.bintray.com/phrack/maven/"
+    }
+    // for xuggle
+    maven {
+        url "https://www.dcm4che.org/maven2/"
+    }
+
+    // for jtok
+    maven {
+        url "https://raw.githubusercontent.com/DFKI-MLT/Maven-Repository/main"
+    }
+
+    // for fast md5
+    maven {
+        url "https://nrgxnat.jfrog.io/artifactory/libs-release/"
+    }
+
+    // for jampack
+    maven {
+        url "https://nexus.terrestris.de/repository/public/"
     }
 }
 
@@ -94,59 +116,59 @@ dependencies {
 //    jfxant files("$javaHome" + "/../lib/ant-javafx.jar")
 
     // FindBugs annotations to suppress warnings
-    compile group: 'com.google.code.findbugs', name: 'annotations', version: '3.+'
+    api group: 'com.google.code.findbugs', name: 'annotations', version: '3.+'
 
     // Raven, exception reporting client (requires logback)
-    compile group: 'com.getsentry.raven', name: 'raven-logback', version: '7.+'
+    api group: 'com.getsentry.raven', name: 'raven-logback', version: '7.+'
 
     // Logback to enable exception reporting
-    compile group: 'ch.qos.logback', name: 'logback-core', version: '1.+'
-    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.+'
+    api group: 'ch.qos.logback', name: 'logback-core', version: '1.+'
+    api group: 'ch.qos.logback', name: 'logback-classic', version: '1.+'
 
     // bridj is here because webcam-capture depends on it but fetches 0.6.2, which
     // does not play nicely with stackguard in newer versions of the JVM.
-    compile group: 'com.nativelibs4java', name: 'bridj', version: '0.7.0'
-    compile group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.+'
-    compile group: 'com.github.sarxos', name: 'webcam-capture-driver-ipcam', version: '0.3.+'
-    compile group: 'com.github.sarxos', name: 'webcam-capture-driver-v4l4j', version: '0.3.+'
+    api group: 'com.nativelibs4java', name: 'bridj', version: '0.7.0'
+    api group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.+'
+    api group: 'com.github.sarxos', name: 'webcam-capture-driver-ipcam', version: '0.3.+'
+    api group: 'com.github.sarxos', name: 'webcam-capture-driver-v4l4j', version: '0.3.+'
 
-    compile group: 'commons-cli', name: 'commons-cli', version: '1.+'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.+'
-    compile group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
+    api group: 'commons-cli', name: 'commons-cli', version: '1.+'
+    api group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.+'
+    api group: 'org.apache.httpcomponents', name: 'httpmime', version: '4.+'
 
     // tts dependencies
-    compile group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.1.+'
-    compile group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.1.+'
+    api group: 'de.dfki.mary', name: 'marytts-runtime', version: '5.2.+'
+    api group: 'de.dfki.mary', name: 'marytts-lang-en', version: '5.2.+'
+    api group: 'de.dfki.mary', name: 'voice-cmu-slt-hsmm', version: '5.2.+'
 
     // xuggle for recording and playing back video
-    compile group: 'xuggle', name: 'xuggle-xuggler', version: '5.4'
+    api group: 'xuggle', name: 'xuggle-xuggler', version: '5.4'
 
     // JSON
-    compile group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1+'
+    api group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1+'
 
     // OpenImaj
-    compile('org.openimaj:core:1.+') {
+    api('org.openimaj:core:1.+') {
         // OpenImaj transitive dependency that we don't need and that doesn't seem to exist in
         // repos anymore
         exclude group: 'vigna.dsi.unimi.it'
     }
 
     //OpenCV
-    compile 'org.openpnp:opencv:2.4.+'
+    api 'org.openpnp:opencv:2.4.+'
 
     // OSHI to collect HW and system state data
-    compile group: 'com.github.dblock', name: 'oshi-core', version: '3.+'
+    api group: 'com.github.dblock', name: 'oshi-core', version: '3.+'
 
     // JSoup to get processor benchmark data
-    compile group: 'org.jsoup', name: 'jsoup', version: '1.+'
+    api group: 'org.jsoup', name: 'jsoup', version: '1.+'
     
     // Bluetooth libraries, QR code generator, and JSON serializer for headless mode
-    compile 'net.sf.bluecove:bluecove:2.1.0'
+    api 'net.sf.bluecove:bluecove:2.1.0'
     // Assumption that headless mode will only be supported on Linux
-    compile 'net.sf.bluecove:bluecove-gpl:2.1.0'
-    compile 'com.google.zxing:core:3.3.0'
-    compile 'com.google.code.gson:gson:2.8.0'
+    api 'net.sf.bluecove:bluecove-gpl:2.1.0'
+    api 'com.google.zxing:core:3.3.0'
+    api 'com.google.code.gson:gson:2.8.0'
 
     testImplementation group: 'junit', name: 'junit', version: '4.+'
     testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '1.+'
